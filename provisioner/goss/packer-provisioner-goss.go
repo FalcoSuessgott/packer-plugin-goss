@@ -1,6 +1,6 @@
 //go:generate packer-sdc mapstructure-to-hcl2 -type GossConfig
 
-package main
+package goss
 
 import (
 	"context"
@@ -14,10 +14,8 @@ import (
 	"github.com/hashicorp/hcl/v2/hcldec"
 
 	"github.com/hashicorp/packer-plugin-sdk/packer"
-	"github.com/hashicorp/packer-plugin-sdk/plugin"
 	"github.com/hashicorp/packer-plugin-sdk/template/config"
 	"github.com/hashicorp/packer-plugin-sdk/template/interpolate"
-	"github.com/hashicorp/packer-plugin-sdk/version"
 )
 
 const (
@@ -101,17 +99,6 @@ type Provisioner struct {
 	config GossConfig
 }
 
-func main() {
-	pps := plugin.NewSet()
-	pps.RegisterProvisioner(plugin.DEFAULT_NAME, new(Provisioner))
-	pps.SetVersion(version.InitializePluginVersion("0.0.1", ""))
-	err := pps.Run()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
-	}
-}
-
 func (p *Provisioner) ConfigSpec() hcldec.ObjectSpec {
 	return p.config.FlatMapstructure().HCL2Spec()
 }
@@ -130,7 +117,7 @@ func (p *Provisioner) Prepare(raws ...interface{}) error {
 	}
 
 	if p.config.Version == "" {
-		p.config.Version = "0.3.9"
+		p.config.Version = "0.4.2"
 	}
 
 	if p.config.Arch == "" {
@@ -475,7 +462,7 @@ func (p *Provisioner) getDownloadUrl() string {
 		filename = fmt.Sprintf("%s.exe", filename)
 	}
 
-	return fmt.Sprintf("https://github.com/aelsabbahy/goss/releases/download/v%s/%s", p.config.Version, filename)
+	return fmt.Sprintf("https://github.com/goss-org/goss/releases/download/v%s/%s", p.config.Version, filename)
 }
 
 func (p *Provisioner) isGossAlpha() bool {

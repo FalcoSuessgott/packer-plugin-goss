@@ -1,4 +1,4 @@
-module github.com/YaleUniversity/packer-provisioner-goss/v3
+module github.com/YaleUniversity/packer-provisioner-goss
 
 go 1.16
 
