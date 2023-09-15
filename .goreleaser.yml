@@ -27,6 +27,7 @@ builds:
       - -trimpath
     ldflags:
       - '-s -w -X {{ .ModulePath }}/version.Version={{.Version}} -X {{ .ModulePath }}/version.VersionPrerelease= '
+    binary: "{{ .ProjectName }}_v{{ .Version }}_{{ .Env.PACKER_PROTOCOL_VERSION }}_{{ .Os }}_{{ .Arch }}"
     targets:
       - linux_amd64
       - linux_arm64
