@@ -1,6 +1,6 @@
 //go:generate packer-sdc mapstructure-to-hcl2 -type GossConfig
 
-package main
+package goss
 
 import (
 	"context"
@@ -14,7 +14,6 @@ import (
 	"github.com/hashicorp/hcl/v2/hcldec"
 
 	"github.com/hashicorp/packer-plugin-sdk/packer"
-	"github.com/hashicorp/packer-plugin-sdk/plugin"
 	"github.com/hashicorp/packer-plugin-sdk/template/config"
 	"github.com/hashicorp/packer-plugin-sdk/template/interpolate"
 )
@@ -22,6 +21,7 @@ import (
 const (
 	gossSpecFile      = "/tmp/goss-spec.yaml"
 	gossDebugSpecFile = "/tmp/debug-goss-spec.yaml"
+	gossResultFile    = "/tmp/results.txt"
 	linux             = "Linux"
 	windows           = "Windows"
 )
@@ -100,15 +100,6 @@ type Provisioner struct {
 	config GossConfig
 }
 
-func main() {
-	server, err := plugin.Server()
-	if err != nil {
-		panic(err)
-	}
-	server.RegisterProvisioner(new(Provisioner))
-	server.Serve()
-}
-
 func (p *Provisioner) ConfigSpec() hcldec.ObjectSpec {
 	return p.config.FlatMapstructure().HCL2Spec()
 }
@@ -127,7 +118,7 @@ func (p *Provisioner) Prepare(raws ...interface{}) error {
 	}
 
 	if p.config.Version == "" {
-		p.config.Version = "0.3.9"
+		p.config.Version = "0.4.2"
 	}
 
 	if p.config.Arch == "" {
@@ -317,7 +308,7 @@ func (p *Provisioner) Provision(ctx context.Context, ui packer.Ui, comm packer.C
 // downloadSpecs downloads the Goss specs from the remote host to current working dir on local machine
 func (p *Provisioner) downloadSpecs(ui packer.Ui, comm packer.Communicator) error {
 	ui.Message(fmt.Sprintf("Downloading Goss specs from, %s and %s to current dir", gossSpecFile, gossDebugSpecFile))
-	for _, file := range []string{gossSpecFile, gossDebugSpecFile} {
+	for _, file := range []string{gossSpecFile, gossDebugSpecFile, gossResultFile} {
 		f, err := os.Create(filepath.Base(file))
 		if err != nil {
 			return fmt.Errorf("Error opening: %s", err)
@@ -371,9 +362,10 @@ func (p *Provisioner) runGoss(ui packer.Ui, comm packer.Communicator) error {
 			p.config.RemotePath, p.envVars(), goss, p.config.GossFile,
 			p.vars(), p.inline_vars(), gossDebugSpecFile,
 		),
-		"validate": fmt.Sprintf("cd %s && %s %s %s %s %s %s validate --retry-timeout %s --sleep %s %s %s",
+		"validate": fmt.Sprintf("cd %s && %s %s %s %s %s %s validate --retry-timeout %s --sleep %s %s %s | tee %s",
 			p.config.RemotePath, p.enableSudo(), p.envVars(), goss, p.config.GossFile,
 			p.vars(), p.inline_vars(), p.retryTimeout(), p.sleep(), p.format(), p.formatOptions(),
+			gossResultFile,
 		),
 	}
 
@@ -472,7 +464,7 @@ func (p *Provisioner) getDownloadUrl() string {
 		filename = fmt.Sprintf("%s.exe", filename)
 	}
 
-	return fmt.Sprintf("https://github.com/aelsabbahy/goss/releases/download/v%s/%s", p.config.Version, filename)
+	return fmt.Sprintf("https://github.com/goss-org/goss/releases/download/v%s/%s", p.config.Version, filename)
 }
 
 func (p *Provisioner) isGossAlpha() bool {
