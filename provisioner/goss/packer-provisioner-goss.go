@@ -21,6 +21,7 @@ import (
 const (
 	gossSpecFile      = "/tmp/goss-spec.yaml"
 	gossDebugSpecFile = "/tmp/debug-goss-spec.yaml"
+	gossResultFile    = "/tmp/results.txt"
 	linux             = "Linux"
 	windows           = "Windows"
 )
@@ -307,7 +308,7 @@ func (p *Provisioner) Provision(ctx context.Context, ui packer.Ui, comm packer.C
 // downloadSpecs downloads the Goss specs from the remote host to current working dir on local machine
 func (p *Provisioner) downloadSpecs(ui packer.Ui, comm packer.Communicator) error {
 	ui.Message(fmt.Sprintf("Downloading Goss specs from, %s and %s to current dir", gossSpecFile, gossDebugSpecFile))
-	for _, file := range []string{gossSpecFile, gossDebugSpecFile} {
+	for _, file := range []string{gossSpecFile, gossDebugSpecFile, gossResultFile} {
 		f, err := os.Create(filepath.Base(file))
 		if err != nil {
 			return fmt.Errorf("Error opening: %s", err)
@@ -361,9 +362,10 @@ func (p *Provisioner) runGoss(ui packer.Ui, comm packer.Communicator) error {
 			p.config.RemotePath, p.envVars(), goss, p.config.GossFile,
 			p.vars(), p.inline_vars(), gossDebugSpecFile,
 		),
-		"validate": fmt.Sprintf("cd %s && %s %s %s %s %s %s validate --retry-timeout %s --sleep %s %s %s",
+		"validate": fmt.Sprintf("cd %s && %s %s %s %s %s %s validate --retry-timeout %s --sleep %s %s %s | tee %s",
 			p.config.RemotePath, p.enableSudo(), p.envVars(), goss, p.config.GossFile,
 			p.vars(), p.inline_vars(), p.retryTimeout(), p.sleep(), p.format(), p.formatOptions(),
+			gossResultFile,
 		),
 	}
 
