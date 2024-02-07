@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/packer-plugin-sdk/plugin"
 	"github.com/hashicorp/packer-plugin-sdk/version"
 
-	"github.com/YaleUniversity/packer-provisioner-goss/provisioner/goss"
+	"github.com/YaleUniversity/packer-provisioner-goss/v3/provisioner/goss"
 )
 
 var (
@@ -16,7 +16,8 @@ var (
 
 func main() {
 	pps := plugin.NewSet()
-	pps.RegisterProvisioner(plugin.DEFAULT_NAME, new(goss.Provisioner))
+
+	pps.RegisterProvisioner("goss", new(goss.Provisioner))
 	pps.SetVersion(version.InitializePluginVersion(Version, ""))
 
 	err := pps.Run()
